@@ -1,9 +1,55 @@
+library(ggplot2)
 library(DMwR)
 library(dplyr)
 library(randomForest)
 library(mice)
-train=read.csv("titanic.train.csv",sep=",",na.strings = "", stringsAsFactors=FALSE)
-test=read.csv("titanic.test.csv",sep=",",na.strings = "", stringsAsFactors=FALSE)
+
+titanic_train=read.csv("train.csv",sep=",",na.strings = "")
+titanic_test=read.csv("test.csv",sep=",",na.strings = "")
+
+sapply(titanic_train,function(x) sum(is.na(x)))
+sapply(titanic_test,function(x) sum(is.na(x)))
+
+titanic_train=subset(titanic_train,select=-Cabin)
+titanic_test=subset(titanic_test,select=-Cabin)
+
+#統計數字
+data_all=rbind(subset(titanic_train,select=-Survived),titanic_test)
+sapply(data_all,function(x) sum(is.na(x)))
+ggplot(data_all$Sex)
+#ggplot(data_all, aes(x=Sex))+ geom_bar()
+ggplot(data_all, aes(x=Pclass,fill=Sex))+ geom_bar()
+ggplot(data_all, aes(x=Age))+ geom_histogram()
+
+summary(data_all)
+
+#計算男女存活率(trainning data)
+female_train=subset(titanic_train,titanic_train$Sex=="female")
+male_train=subset(titanic_train,titanic_train$Sex=="male")
+male_survived=0
+female_survived=0
+for(i in 1:577){
+  if(male_train$Survived[i]==1){
+    male_survived=male_survived+1
+     }
+}
+for(i in 1:314){
+  if(female_train$Survived[i]==1){
+    female_survived=female_survived+1
+  }
+}
+male_survival_rate=male_survived/length(male_train$Survived)
+female_survival_rate=female_survived/length(female_train$Survived)
+survival_rate=rbind(male_survival_rate,female_survival_rate)
+colnames(survival_rate)="SurvivalRate"
+survival_rate=as.data.frame(survival_rate)
+Sex=c("man","woman")
+survival_rate=data.frame(survival_rate,Sex)
+ggplot(survival_rate,aes(y=SurvivalRate,x=Sex))+geom_bar(stat="identity")
+
+##### 資料預處理
+train=read.csv("train.csv",sep=",",na.strings = "", stringsAsFactors=FALSE)
+test=read.csv("test.csv",sep=",",na.strings = "", stringsAsFactors=FALSE)
 #which(colSums(sapply(train, is.na))==F)
 sapply(train,function(x) sum(is.na(x)))
 sapply(test,function(x) sum(is.na(x)))
@@ -27,7 +73,6 @@ train.1=all.1[1:nrow(train),]
 test.1=all.1[(nrow(train)+1):nrow(all.1),]
 Survived=train$Survived
 train.1=data.frame(train.1,Survived)
-sapply(train.1,function(x) sum(is.na(x)))
 sapply(train.1,function(x) sum(is.na(x)))
 
 model.rf=randomForest(Survived~.,data=train.1,ntree=1000,proximity=TRUE)
