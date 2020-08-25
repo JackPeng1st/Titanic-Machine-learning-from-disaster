@@ -4,6 +4,7 @@ library(dplyr)
 library(randomForest)
 library(mice)
 library(rpart)
+library(e1071)
 
 titanic_train=read.csv("C:/Users/jackp/OneDrive/文件/專題/titanic/train.csv",sep=",",na.strings = "")
 titanic_test=read.csv("C:/Users/jackp/OneDrive/文件/專題/titanic/test.csv",sep=",",na.strings = "")
@@ -86,10 +87,18 @@ result.rf=cbind(PassengerId=test$PassengerId,Survived=prediction.rf)
 
 write.csv(result.rf,"rf.csv",row.names=F)
 #### Decision Tree
-model.tree=rpart(Survived~.,data=train.1,,method="anova")
+model.tree=rpart(Survived~.,data=train.1,method="anova")
 prediction.tree=predict(model.tree,test.1)
 prediction.tree[prediction.tree>0.65]=1
 prediction.tree[prediction.tree<=0.65]=0
 result.tree=cbind(PassengerId=test$PassengerId,Survived=prediction.tree)
 
-write.csv(result.rf,"tree.csv",row.names=F)
+write.csv(result.tree,"tree.csv",row.names=F)
+#### SVM
+model.svm=svm(Survived~.,data=train.1, cost = 3)
+prediction.svm=predict(model.svm,test.1)
+prediction.svm[prediction.svm>0.65]=1
+prediction.svm[prediction.svm<=0.65]=0
+result.svm=cbind(PassengerId=test$PassengerId,Survived=prediction.svm)
+
+write.csv(result.svm,"svm.csv",row.names=F)
