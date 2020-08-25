@@ -3,9 +3,10 @@ library(DMwR)
 library(dplyr)
 library(randomForest)
 library(mice)
+library(rpart)
 
-titanic_train=read.csv("train.csv",sep=",",na.strings = "")
-titanic_test=read.csv("test.csv",sep=",",na.strings = "")
+titanic_train=read.csv("C:/Users/jackp/OneDrive/文件/專題/titanic/train.csv",sep=",",na.strings = "")
+titanic_test=read.csv("C:/Users/jackp/OneDrive/文件/專題/titanic/test.csv",sep=",",na.strings = "")
 
 sapply(titanic_train,function(x) sum(is.na(x)))
 sapply(titanic_test,function(x) sum(is.na(x)))
@@ -48,8 +49,8 @@ survival_rate=data.frame(survival_rate,Sex)
 ggplot(survival_rate,aes(y=SurvivalRate,x=Sex))+geom_bar(stat="identity")
 
 ##### 資料預處理
-train=read.csv("train.csv",sep=",",na.strings = "", stringsAsFactors=FALSE)
-test=read.csv("test.csv",sep=",",na.strings = "", stringsAsFactors=FALSE)
+train=read.csv("C:/Users/jackp/OneDrive/文件/專題/titanic/train.csv",sep=",",na.strings = "", stringsAsFactors=FALSE)
+test=read.csv("C:/Users/jackp/OneDrive/文件/專題/titanic/test.csv",sep=",",na.strings = "", stringsAsFactors=FALSE)
 #which(colSums(sapply(train, is.na))==F)
 sapply(train,function(x) sum(is.na(x)))
 sapply(test,function(x) sum(is.na(x)))
@@ -75,6 +76,7 @@ Survived=train$Survived
 train.1=data.frame(train.1,Survived)
 sapply(train.1,function(x) sum(is.na(x)))
 
+#### Randomforest
 model.rf=randomForest(Survived~.,data=train.1,ntree=1000,proximity=TRUE)
 
 prediction.rf=predict(model.rf,test.1)
@@ -83,3 +85,11 @@ prediction.rf[prediction.rf<=0.65]=0
 result.rf=cbind(PassengerId=test$PassengerId,Survived=prediction.rf)
 
 write.csv(result.rf,"rf.csv",row.names=F)
+#### Decision Tree
+model.tree=rpart(Survived~.,data=train.1,,method="anova")
+prediction.tree=predict(model.tree,test.1)
+prediction.tree[prediction.tree>0.65]=1
+prediction.tree[prediction.tree<=0.65]=0
+result.tree=cbind(PassengerId=test$PassengerId,Survived=prediction.tree)
+
+write.csv(result.rf,"tree.csv",row.names=F)
