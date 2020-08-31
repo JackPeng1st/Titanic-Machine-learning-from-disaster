@@ -3,6 +3,6 @@
  Data: 10 variables (such as sex, Age, pclass, etc...)
  Goal: Predicting if passengers survived or not.
  Methods: Decision tree, Ramdom Forest, SVM, etc...
- Result: Accuracy is 78.2%, Rank is 4759/20415(23%)
+ Result: Accuracy is 77.99%, Rank is 4436/20415(21.7%)
  
 https://www.kaggle.com/c/titanic
