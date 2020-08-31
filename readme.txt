@@ -6,3 +6,4 @@
  Result: Accuracy is 78.468%, Rank is 3583/19647(18.2%)
  
 https://www.kaggle.com/c/titanic
+The proof of ranking: https://drive.google.com/file/d/1TtvPXADJvWT3AeexQ8i7x-UnIoV_z-F9/view?usp=sharing
