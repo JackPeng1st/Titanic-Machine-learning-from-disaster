@@ -70,7 +70,8 @@ data_all['Embarked']=data_all['Embarked'].fillna('S')
 
 data_all['Fare']=data_all['Fare'].fillna(data_all['Fare'].mean())
 
-data_all.drop('Cabin',1,inplace=True)
+data_all['Cabin']=data_all['Cabin'].apply(lambda x : str(x)[0] if not pd.isnull(x) else 'NoCabin') 
+
 data_all.drop('Name',1,inplace=True)
 data_all.drop('PassengerId',1,inplace=True)
 data_all.drop('Ticket',1,inplace=True)
@@ -81,6 +82,8 @@ sns.countplot(data_all['Embarked'])
 data_all['Embarked']= data_all['Embarked'].astype('category').cat.codes
 data_all['Sex']= data_all['Sex'].map({'male':1, 'female':2})
 
+sns.countplot(data_all['Cabin'])
+data_all['Cabin']=data_all['Cabin'].astype('category').cat.codes
 data_all.info()
 ####建model
 data_all.drop('Survived',1,inplace=True)
@@ -98,4 +101,4 @@ rf.fit(X_train,Y_label)
 prediction=rf.predict(X_test)
 
 submission=pd.DataFrame({"PassengerId":test_data['PassengerId'],"Survived":prediction})
-submission.to_csv('python.rf.csv',index=False)
+submission.to_csv('python_rf.csv',index=False)
