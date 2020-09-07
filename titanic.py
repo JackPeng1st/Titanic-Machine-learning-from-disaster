@@ -51,7 +51,9 @@ def bar_chart(feature):
 train_test_data = [train_data, test_data] # combining train and test dataset
 for dataset in train_test_data:
     dataset['Title'] = dataset['Name'].str.extract(' ([A-Za-z]+)\.', expand=False)
-    
+sns.countplot(train_data ['Title']) 
+sns.countplot(test_data ['Title']) 
+#Mr,Miss,Mrs之數量較多
 title_mapping = {"Mr": 0, "Miss": 1, "Mrs": 2, 
                  "Master": 3, "Dr": 3, "Rev": 3, "Col": 3, "Major": 3, "Mlle": 3,"Countess": 3,
                  "Ms": 3, "Lady": 3, "Jonkheer": 3, "Don": 3, "Dona" : 3, "Mme": 3,"Capt": 3,"Sir": 3 }
