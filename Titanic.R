@@ -1,104 +1,143 @@
-library(ggplot2)
-library(DMwR)
-library(dplyr)
-library(randomForest)
-library(mice)
-library(rpart)
-library(e1071)
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.ensemble import RandomForestClassifier
+from sklearn import metrics, cross_validation
+from sklearn.svm import SVC, LinearSVC
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
 
-titanic_train=read.csv("titanic/train.csv",sep=",",na.strings = "")
-titanic_test=read.csv("titanic/test.csv",sep=",",na.strings = "")
+#with open('C:/Users/jackp/OneDrive/文件/專題/titanic/train.csv', newline='') as csvfile:
+   # rows = csv.reader(csvfile)
+    #for row in rows:
+       # print(row)
+train_data = pd.read_csv('C:/Users/jackp/OneDrive/文件/專題/titanic/train.csv',engine='python')
+test_data = pd.read_csv('C:/Users/jackp/OneDrive/文件/專題/titanic/test.csv',engine='python')
 
-sapply(titanic_train,function(x) sum(is.na(x)))
-sapply(titanic_test,function(x) sum(is.na(x)))
+train_data.head()
+test_data.head()
+print(train_data.describe())
+print(train_data.isnull().sum())  
+print(test_data.isnull().sum())
 
-titanic_train=subset(titanic_train,select=-Cabin)
-titanic_test=subset(titanic_test,select=-Cabin)
+#survival number
+labels='Survived','dead'
+size=(len(train_data[train_data['Survived']==1]),len(train_data[train_data['Survived']==0]))
+plt.pie(size , labels = labels,autopct='%1.1f%%')
+plt.axis('equal')
+plt.show()
 
-#統計數字
-data_all=rbind(subset(titanic_train,select=-Survived),titanic_test)
-sapply(data_all,function(x) sum(is.na(x)))
-ggplot(data_all$Sex)
-#ggplot(data_all, aes(x=Sex))+ geom_bar()
-ggplot(data_all, aes(x=Pclass,fill=Sex))+ geom_bar()
-ggplot(data_all, aes(x=Age))+ geom_histogram()
+#women survival rate (train data)
+women = train_data.loc[train_data.Sex == 'female']["Survived"]
+survival_rate_women = sum(women)/len(women)
+print(survival_rate_women)
 
-summary(data_all)
+men=train_data.loc[train_data.Sex=='male']["Survived"]
+survival_rate_men=sum(men)/len(men)
+print(survival_rate_men,survival_rate_women)
 
-#計算男女存活率(trainning data)
-female_train=subset(titanic_train,titanic_train$Sex=="female")
-male_train=subset(titanic_train,titanic_train$Sex=="male")
-male_survived=0
-female_survived=0
-for(i in 1:577){
-  if(male_train$Survived[i]==1){
-    male_survived=male_survived+1
-     }
-}
-for(i in 1:314){
-  if(female_train$Survived[i]==1){
-    female_survived=female_survived+1
-  }
-}
-male_survival_rate=male_survived/length(male_train$Survived)
-female_survival_rate=female_survived/length(female_train$Survived)
-survival_rate=rbind(male_survival_rate,female_survival_rate)
-colnames(survival_rate)="SurvivalRate"
-survival_rate=as.data.frame(survival_rate)
-Sex=c("man","woman")
-survival_rate=data.frame(survival_rate,Sex)
-ggplot(survival_rate,aes(y=SurvivalRate,x=Sex))+geom_bar(stat="identity")
+##bar chart
+x = ['Man survival rate','Woman survival rate']
+y=[survival_rate_men,survival_rate_women]
+plt.bar(x, y)
+plt.grid(True)
+plt.show()
+####
+def bar_chart(feature):
+    survived = train_data[train_data['Survived']==1][feature].value_counts()
+    dead = train_data[train_data['Survived']==0][feature].value_counts()
+    df = pd.DataFrame([survived,dead])
+    df.index = ['Survived','Dead']
+    df.plot(kind='bar',stacked=True, figsize=(10,5))
 
-##### 資料預處理
-train=read.csv("train.csv",sep=",",na.strings = "", stringsAsFactors=FALSE)
-test=read.csv("test.csv",sep=",",na.strings = "", stringsAsFactors=FALSE)
-#which(colSums(sapply(train, is.na))==F)
-sapply(train,function(x) sum(is.na(x)))
-sapply(test,function(x) sum(is.na(x)))
-#用集中趨勢填NA
-train.1=centralImputation(train)
-test.1=centralImputation(test)
-sapply(train.1,function(x) sum(is.na(x)))
-sapply(test.1,function(x) sum(is.na(x)))
-#Name,Ticket,Cabin have too many categories(建成factor會有太多類別，因為random forest 最多容許53格類別 ) ,so 刪除他們
-all.1=rbind(within(train.1,rm("Survived")),test.1)
-all.1=subset(all.1,select=-c(Name,Ticket,Cabin))
+train_test_data = [train_data, test_data] # combining train and test dataset
+for dataset in train_test_data:
+    dataset['Title'] = dataset['Name'].str.extract(' ([A-Za-z]+)\.', expand=False)
+sns.countplot(train_data ['Title']) 
+sns.countplot(test_data ['Title']) 
+#Mr,Miss,Mrs之數量較多
+title_mapping = {"Mr": 0, "Miss": 1, "Mrs": 2, 
+                 "Master": 3, "Dr": 3, "Rev": 3, "Col": 3, "Major": 3, "Mlle": 3,"Countess": 3,
+                 "Ms": 3, "Lady": 3, "Jonkheer": 3, "Don": 3, "Dona" : 3, "Mme": 3,"Capt": 3,"Sir": 3 }
+for dataset in train_test_data:
+    dataset['Title'] = dataset['Title'].map(title_mapping)
+print(train_data['Title'])
 
-#需要將CHAR變數轉factor(因為要用randomforest)
-chr.var=all.1[,(sapply(all.1,is.character))]
-num.var=all.1[,sapply(all.1,is.numeric)]
+bar_chart('Title')
+bar_chart('Sex')
+bar_chart('Pclass')
+bar_chart('Parch')
 
-fac.var=sapply(chr.var,as.factor)
-all.1=data.frame(fac.var,num.var)
+#####feature engineering
 
-train.1=all.1[1:nrow(train),]
-test.1=all.1[(nrow(train)+1):nrow(all.1),]
-Survived=train$Survived
-train.1=data.frame(train.1,Survived)
-sapply(train.1,function(x) sum(is.na(x)))
 
-#### Randomforest
-model.rf=randomForest(Survived~.,data=train.1,ntree=1000,proximity=TRUE)
+###將test_data和train_data合併一起處理
+data_all=train_data.append(test_data)
+# 將SibSp與Parch欄合併, 再刪他們
+data_all['Family']=data_all['SibSp']+data_all['Parch']
+data_all.drop('SibSp',1,inplace=True)
+data_all.drop('Parch',1,inplace=True)
 
-prediction.rf=predict(model.rf,test.1)
-prediction.rf[prediction.rf>0.65]=1
-prediction.rf[prediction.rf<=0.65]=0
-result.rf=cbind(PassengerId=test$PassengerId,Survived=prediction.rf)
+data_all.info()
+data_all.reset_index(inplace=True, drop=True)
+###用中位數填補Age的NAs
+data_all['Age']=data_all['Age'].fillna(data_all['Age'].median())
 
-write.csv(result.rf,"rf.csv",row.names=F)
-#### Decision Tree
-model.tree=rpart(Survived~.,data=train.1,method="anova")
-prediction.tree=predict(model.tree,test.1)
-prediction.tree[prediction.tree>0.65]=1
-prediction.tree[prediction.tree<=0.65]=0
-result.tree=cbind(PassengerId=test$PassengerId,Survived=prediction.tree)
+##看embarked類別裡的數量
+#sns.countplot(data_all['Embarked'],hue=data_all['Survived'])
+sns.countplot(data_all['Embarked'])
+data_all['Embarked']=data_all['Embarked'].fillna('S')
 
-write.csv(result.tree,"tree.csv",row.names=F)
-#### SVM
-model.svm=svm(Survived~.,data=train.1, cost = 3)
-prediction.svm=predict(model.svm,test.1)
-prediction.svm[prediction.svm>0.65]=1
-prediction.svm[prediction.svm<=0.65]=0
-result.svm=cbind(PassengerId=test$PassengerId,Survived=prediction.svm)
+data_all['Fare']=data_all['Fare'].fillna(data_all['Fare'].mean())
 
-write.csv(result.svm,"svm.csv",row.names=F)
+data_all['Cabin']=data_all['Cabin'].apply(lambda x : str(x)[0] if not pd.isnull(x) else 'NoCabin') 
+
+data_all.drop('Name',1,inplace=True)
+data_all.drop('PassengerId',1,inplace=True)
+data_all.drop('Ticket',1,inplace=True)
+
+data_all.info()
+###將非類別型態的變數轉為數值型
+sns.countplot(data_all['Embarked'])
+data_all['Embarked']= data_all['Embarked'].astype('category').cat.codes
+data_all['Sex']= data_all['Sex'].map({'male':1, 'female':2})
+
+sns.countplot(data_all['Cabin'])
+data_all['Cabin']=data_all['Cabin'].astype('category').cat.codes
+data_all.info()
+####建model
+data_all.drop('Survived',1,inplace=True)
+X_train=data_all[0:len(train_data)]
+X_test=data_all.iloc[len(train_data):]
+# Scikit-learn 需要train dataset及label dataset（即答案）各一
+Y_label= train_data.Survived 
+
+#cross validation
+#decision tree
+Y_pred = cross_validation.cross_val_predict(DecisionTreeClassifier(), X_train, Y_label, cv=10)
+acc_decision_tree = metrics.accuracy_score(Y_label, Y_pred)
+#Random Forest
+Y_pred = cross_validation.cross_val_predict(RandomForestClassifier(n_estimators=1000), X_train, Y_label, cv=10)
+acc_rf=metrics.accuracy_score(Y_label, Y_pred)
+#print (metrics.classification_report(Y_label, Y_pred) )
+#Logistic Regression
+Y_pred = cross_validation.cross_val_predict(LogisticRegression(), X_train, Y_label, cv=10)
+acc_LR=metrics.accuracy_score(Y_label, Y_pred)
+#SVC
+Y_pred = cross_validation.cross_val_predict(SVC(), X_train, Y_label, cv=10)
+acc_svc = metrics.accuracy_score(Y_label, Y_pred)
+#evaluting which model is the best
+models = pd.DataFrame({
+    'Model': ['Decision Tree','Random Forest', 'Logistic Regression','Support Vector Machines'],
+    'Score': [acc_decision_tree, acc_rf, acc_LR,acc_svc]})
+
+models.sort_values(by='Score', ascending=False)
+
+#Formal Build Model
+rf=RandomForestClassifier(criterion='gini',n_estimators=1000, min_samples_split=12,min_samples_leaf=1,oob_score=True,random_state=1,n_jobs=-1)
+rf.fit(X_train,Y_label)
+prediction=rf.predict(X_test)
+
+submission=pd.DataFrame({"PassengerId":test_data['PassengerId'],"Survived":prediction})
+submission.to_csv('python_rf.csv',index=False)
