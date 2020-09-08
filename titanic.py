@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import metrics, cross_validation
+from sklearn.svm import SVC, LinearSVC
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
 
 #with open('C:/Users/jackp/OneDrive/文件/專題/titanic/train.csv', newline='') as csvfile:
    # rows = csv.reader(csvfile)
@@ -78,11 +81,12 @@ data_all.drop('Parch',1,inplace=True)
 
 data_all.info()
 data_all.reset_index(inplace=True, drop=True)
-###用平均填補Age的NAs
+###用中位數填補Age的NAs
 data_all['Age']=data_all['Age'].fillna(data_all['Age'].median())
 
 ##看embarked類別裡的數量
-sns.countplot(data_all['Embarked'],hue=data_all['Survived'])
+#sns.countplot(data_all['Embarked'],hue=data_all['Survived'])
+sns.countplot(data_all['Embarked'])
 data_all['Embarked']=data_all['Embarked'].fillna('S')
 
 data_all['Fare']=data_all['Fare'].fillna(data_all['Fare'].mean())
@@ -109,14 +113,30 @@ X_test=data_all.iloc[len(train_data):]
 # Scikit-learn 需要train dataset及label dataset（即答案）各一
 Y_label= train_data.Survived 
 
-#Y_pred = cross_validation.cross_val_predict(RandomForestClassifier(n_estimators=100), X_train, Y_label, cv=10)
-#acc_random_forest = metrics.accuracy_score(Y_label, Y_pred)
+#cross validation
+#decision tree
+Y_pred = cross_validation.cross_val_predict(DecisionTreeClassifier(), X_train, Y_label, cv=10)
+acc_decision_tree = metrics.accuracy_score(Y_label, Y_pred)
+#Random Forest
+Y_pred = cross_validation.cross_val_predict(RandomForestClassifier(n_estimators=1000), X_train, Y_label, cv=10)
+acc_rf=metrics.accuracy_score(Y_label, Y_pred)
 #print (metrics.classification_report(Y_label, Y_pred) )
+#Logistic Regression
+Y_pred = cross_validation.cross_val_predict(LogisticRegression(), X_train, Y_label, cv=10)
+acc_LR=metrics.accuracy_score(Y_label, Y_pred)
+#SVC
+Y_pred = cross_validation.cross_val_predict(SVC(), X_train, Y_label, cv=10)
+acc_svc = metrics.accuracy_score(Y_label, Y_pred)
+#evaluting which model is the best
+models = pd.DataFrame({
+    'Model': ['Decision Tree','Random Forest', 'Logistic Regression','Support Vector Machines'],
+    'Score': [acc_decision_tree, acc_rf, acc_LR,acc_svc]})
 
+models.sort_values(by='Score', ascending=False)
+
+#Formal Build Model
 rf=RandomForestClassifier(criterion='gini',n_estimators=1000, min_samples_split=12,min_samples_leaf=1,oob_score=True,random_state=1,n_jobs=-1)
-
 rf.fit(X_train,Y_label)
-
 prediction=rf.predict(X_test)
 
 submission=pd.DataFrame({"PassengerId":test_data['PassengerId'],"Survived":prediction})
